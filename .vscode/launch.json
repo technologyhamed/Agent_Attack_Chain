@@ -1,0 +1,34 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: CLI Process",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/cli.py", 
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "process", 
+        "--from",
+        "now-1y",
+        "--to",
+        "now",
+        "--min-risk",
+        "20",
+        "--verbose"
+      ],
+      "justMyCode": true
+    },
+    {
+        "name": "Python: Typer Schema Command",
+        "type": "debugpy",
+        "request": "launch",
+        "program": "cli.py",
+        "args": ["schema", "init", "--verbose"],
+        "console": "integratedTerminal",
+        "purpose": ["debug-in-terminal"],
+        "justMyCode": true
+    }
+  ]
+}
