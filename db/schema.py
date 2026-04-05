@@ -100,7 +100,7 @@ class Neo4jSchemaManager:
     @staticmethod
     async def get_schema_info_query(neo4j_client) -> tuple:
         """Fetches schema info: indexes and constraints separately"""
-        # اجرای کوئری شاخص‌ها
+        # Index run Query
         query_indexes = """
         SHOW INDEXES YIELD name, labelsOrTypes, properties, type, state
         WHERE state = 'ONLINE'
@@ -108,7 +108,7 @@ class Neo4jSchemaManager:
         """
         INDEXES_STATUS = await neo4j_client.execute_read(query_indexes)
 
-        # اجرای کوئری محدود به محدودیت‌ها
+        # Constraints Run Query
         query_constraints = """
         SHOW CONSTRAINTS YIELD name, type, labelsOrTypes, properties, entityType
         WHERE entityType='NODE'

@@ -1,56 +1,82 @@
-# Example requirements.txt (Illustrative versions, check PyPI for latest compatible)
+# # Example requirements.txt (Illustrative versions, check PyPI for latest compatible)
 
-# Core Langchain (adjust versions as needed)
-langchain
-langchain-core
-langchain-community
+# # Core Langchain (adjust versions as needed)
+# langchain
+# langchain-core
+# langchain-community
 
-# Langchain Integrations (align with core)
-langchain-elasticsearch
-langchain-neo4j
-langchain-ollama
-langchain-openai
-langchain-agent
-langchain-mcp-adapters # Assuming this exists and is compatible
+# # Langchain Integrations (align with core)
+# langchain-elasticsearch
+# langchain-neo4j
+# langchain-ollama
+# langchain-openai
+# langchain-agent
+# langchain-mcp-adapters # Assuming this exists and is compatible
 
-# MCP Suite (find latest compatible versions)
-mcp
-mcp-agent
-mcp-client-for-ollama
-mcp-tools
-mcp-use
-# fastmcp - If using this, comment out the mcp suite above and uncomment this
-# fastmcp==0.5.0 
+# # MCP Suite (find latest compatible versions)
+# mcp
+# mcp-agent
+# mcp-client-for-ollama
+# mcp-tools
+# mcp-use
+# # fastmcp - If using this, comment out the mcp suite above and uncomment this
+# # fastmcp==0.5.0 
 
-# Core Dependencies
-elasticsearch>=8.17.1
-neo4j>=6.1.0
-python-dotenv>=1.0.1
-pydantic>=2.9.0
-pydantic-settings>=2.5.0
-typer>=0.12.5
-rich>=13.9.0
-aiohttp>=3.10.0
-python-dateutil>=2.9.0
+# # Core Dependencies
+# elasticsearch>=8.17.1
+# neo4j>=6.1.0
+# python-dotenv>=1.0.1
+# pydantic>=2.9.0
+# pydantic-settings>=2.5.0
+# typer>=0.12.5
+# rich>=13.9.0
+# aiohttp>=3.10.0
+# python-dateutil>=2.9.0
 
-# LLM Libraries
-ollama
-openai
+# # LLM Libraries
+# ollama
+# openai
 
-# Other essentials
-numpy
-pandas
-matplotlib
-scikit-learn
-agentc-core
-asyncio
-langgraph
-langgraph-prebuilt # Example for langgraph
+# # Other essentials
+# numpy
+# pandas
+# matplotlib
+# scikit-learn
+# agentc-core
+# asyncio
+# langgraph
+# langgraph-prebuilt # Example for langgraph
 
-# Development Dependencies (optional, for testing)
-pytest>=8.3.0
-pytest-asyncio>=0.24.0
-black>=24.8.0
-isort>=5.13.2
-mypy>=1.11.0
-ruff>=0.6.0
+# # Development Dependencies (optional, for testing)
+# pytest>=8.3.0
+# pytest-asyncio>=0.24.0
+# black>=24.8.0
+# isort>=5.13.2
+# mypy>=1.11.0
+# ruff>=0.6.0
+
+torch
+torch-geometric
+transformers
+optuna
+
+# pytorch
+# pytorch-crf
+# pytorch-fid
+# pytorch-metric-learning
+# pytorch-model-summary
+# pytorch-tcn
+# pytorch-optimizer
+# reformer-pytorch
+
+pysocks
+IPython
+
+
+# mlflow
+# networkx
+# matplotlib 
+# seaborn 
+# pandas 
+# numpy 
+# scikit-learn

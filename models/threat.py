@@ -9,10 +9,10 @@ class MITRETTP:
     Represents MITRE ATT&CK technique referenced in kibana.alert.rule.threat
     Maps to custom extension (not native SEPSes, but compatible)
     """
-    technique_id: str        # e.g., "T1059.001"
-    technique_name: str      # e.g., "PowerShell"
+    technique_id: str           # e.g., "T1059.001"
+    technique_name: str         # e.g., "PowerShell"
     tactic_id:str
-    tactic_name: str              # e.g., "Execution"
+    tactic_name: str            # e.g., "Execution"
     subtechnique: Optional[str] = None
     
     def to_dict(self) -> dict:
