@@ -66,8 +66,11 @@ class SEPSesToNeo4jTransformer:
             # User
             if event.user and event.user.id not in seen_users:
                 seen_users.add(event.user.id)
-                if event.user.username:
-                    queries.add(f"MERGE (u:User {{id: '{event.user.id}'}}) SET u:SEPSesResource, u.username = '{event.user.username}'")
+                props = []
+                if event.user.username: props.append(f"username: '{event.user.username}'")
+                if event.user.domain: props.append(f"domain: '{event.user.domain}'")
+                props_str = ", ".join(props)
+                queries.add(f"MERGE (u:User {{id: '{event.user.id}'}}) SET u:SEPSesResource, f += {{{props_str}}}")
             
             # File
             if event.file and event.file.id not in seen_files:

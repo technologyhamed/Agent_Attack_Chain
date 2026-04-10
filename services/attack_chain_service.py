@@ -156,7 +156,7 @@ class AsyncDataManager:
                  hostname: h.hostname,
                  processName: p.name,
                  technique: t.techniqueName,
-                 tactic: t.tactic
+                 tactic: t.tactic.id
                }) AS events
         """
         result = await self.neo4j_client.execute_read(query)

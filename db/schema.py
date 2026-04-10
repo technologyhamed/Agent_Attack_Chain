@@ -34,6 +34,7 @@ class Neo4jSchemaManager:
         ("Process", "name", "idx_process_name"),
         ("User", "id", "idx_user_id"),
         ("User", "username", "idx_user_username"),
+        ("User", "domain", "idx_user_domain"),
         ("File", "id", "idx_file_id"),
         ("File", "path", "idx_file_path"),
         ("File", "name", "idx_file_name"),
@@ -85,7 +86,7 @@ class Neo4jSchemaManager:
         return queries
     
 
-    @staticmethod
+    #@staticmethod
     # def get_schema_info_query() -> str:
     #     """Query to show current schema status"""
     #     return """
