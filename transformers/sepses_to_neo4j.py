@@ -8,6 +8,10 @@ from models.resource import (
 )
 from models.threat import MITRETTP
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 class SEPSesToNeo4jTransformer:
     """
     Generates Cypher queries to store SEPSes ontology entities in Neo4j
@@ -70,7 +74,7 @@ class SEPSesToNeo4jTransformer:
                 if event.user.username: props.append(f"username: '{event.user.username}'")
                 if event.user.domain: props.append(f"domain: '{event.user.domain}'")
                 props_str = ", ".join(props)
-                queries.add(f"MERGE (u:User {{id: '{event.user.id}'}}) SET u:SEPSesResource, f += {{{props_str}}}")
+                queries.add(f"MERGE (u:User {{id: '{event.user.id}'}}) SET u:SEPSesResource, u += {{{props_str}}}")
             
             # File
             if event.file and event.file.id not in seen_files:
@@ -148,42 +152,42 @@ class SEPSesToNeo4jTransformer:
             # Split the relation definition into node definition string and relation type
             for rel in rels:
                 node_def_str, rel_type = rel.split("|")
-                print(f"node_def_str:${node_def_str}","rel_type:${rel_type}")
-            try:
-                # --- Parse Node Definition String ---
-                #Extract label and ID value using regular expressions
-                # Regex to capture the ID value within the curly braces after 'id:'
-                # Assumes the format is (:Label {id: 'value'})
-                id_match = re.search(r"id: '([^']+)'", node_def_str)
-                if not id_match:
-                    print(f"Could not parse node ID from definition: {node_def_str}")
-                    continue
-                target_node_id = id_match.group(1)
-                # Regex to capture the label, which is the word immediately after ':'
-                label_match = re.search(r":(\w+)", node_def_str)
-                if not label_match:
-                    print(f"Could not parse node label from definition: {node_def_str}")
-                    continue
-                target_label = label_match.group(1)
-                    # --- Construct Cypher Query ---
-                    # The query finds the main node 'e', then the target node, and merges the relationship.
-                    # This approach avoids creating duplicate nodes and relationships, and handles
-                    # the constraint error by ensuring we only merge if the relationship doesn't exist.
-                queries.append(
-                         f"MATCH (e) "
-                         f"MATCH (target:{target_label} {{id: '{target_node_id}'}}) "
-                         f"MERGE (e)-[:{rel_type}]->(target)"
-                )
+                logger.info(f"node_def_str:${node_def_str}","rel_type:${rel_type}")
+                try:
+                    # --- Parse Node Definition String ---
+                    #Extract label and ID value using regular expressions
+                    # Regex to capture the ID value within the curly braces after 'id:'
+                    # Assumes the format is (:Label {id: 'value'})
+                    id_match = re.search(r"id: '([^']+)'", node_def_str)
+                    if not id_match:
+                        logger.info(f"Could not parse node ID from definition: {node_def_str}")
+                        continue
+                    target_node_id = id_match.group(1)
+                    # Regex to capture the label, which is the word immediately after ':'
+                    label_match = re.search(r":(\w+)", node_def_str)
+                    if not label_match:
+                        print(f"Could not parse node label from definition: {node_def_str}")
+                        continue
+                    target_label = label_match.group(1)
+                        # --- Construct Cypher Query ---
+                        # The query finds the main node 'e', then the target node, and merges the relationship.
+                        # This approach avoids creating duplicate nodes and relationships, and handles
+                        # the constraint error by ensuring we only merge if the relationship doesn't exist.
+                    queries.append(
+                            f"MATCH (e) "
+                            f"MATCH (target:{target_label} {{id: '{target_node_id}'}}) "
+                            f"MERGE (e)-[:{rel_type}]->(target)"
+                    )
 
-            except ValueError:
-                print(f"Skipping invalid relation format: {rel}. Expected format: '(:Label {{id: 'value'}})|REL_TYPE'")
-                continue
+                except ValueError:
+                    logger.info(f"Skipping invalid relation format: {rel}. Expected format: '(:Label {{id: 'value'}})|REL_TYPE'")
+                    continue
           
             # Create relationships to MITRE techniques
             for ttp in event.ttps:
                 queries.append(
                     f"MERGE (t:Technique {{id: '{ttp.technique_id}'}}) "
-                    f"SET t.name = '{ttp.technique_name}', t.tactic = '{ttp.tactic_id}' "
+                    f"SET t.name = '{ttp.technique_name}', t.tacticId = '{ttp.tactic_id}' , t.tacticName = '{ttp.tactic_name}' "
                     f"WITH t MATCH (e:LogEvent {{id: '{event.id}'}}) "
                     f"MERGE (e)-[:USES_TTP]->(t)"
                 )

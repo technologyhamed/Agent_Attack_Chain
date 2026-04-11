@@ -17,9 +17,9 @@ class ElasticSearchClient:
     def __init__(self):
         self.client = AsyncElasticsearch(
             hosts=urljoin(settings.ELASTIC_HOST + "/", "/elastic"),
-            #basic_auth=(settings.ELASTIC_USER, settings.ELASTIC_PASSWORD),
+            basic_auth=(settings.ELASTIC_USER, settings.ELASTIC_PASSWORD),
             verify_certs=False,  # Disable for dev; enable in production with proper certs
-            api_key="NlBEMkhwMEIxelNtbGVxc1JVdjM6UmljTHFBY3lTS2FidDVTSHdPZnhHUQ==",
+            #api_key="NlBEMkhwMEIxelNtbGVxc1JVdjM6UmljTHFBY3lTS2FidDVTSHdPZnhHUQ==",
             max_retries=3,
             retry_on_timeout=True,
             request_timeout=30

@@ -74,7 +74,7 @@ def show_attack_chain():
                 
                 table.add_row(
                     str(idx),
-                    event.get('timestamp', 'N/A')[11:19],  # فقط زمان
+                    event.get('timestamp', 'N/A')[11:19],  #
                     event.get('ruleName', 'N/A')[:28],
                     severity_style,
                     event.get('hostname', 'N/A')[:15],

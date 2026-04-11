@@ -3,8 +3,6 @@ import logging
 from typing import List
 from clients.elastic_client import ElasticSearchClient
 from clients.neo4j_client import Neo4jClient
-from transformers.elastic_to_sepses import ElasticToSEPSesTransformer
-from transformers.sepses_to_neo4j import SEPSesToNeo4jTransformer
 from models.threat import AttackChain
 from db.schema import Neo4jSchemaManager  
 
@@ -22,9 +20,9 @@ class AsyncDataManager:
     def __init__(self):
         self.es_client = ElasticSearchClient()
         self.neo4j_client = Neo4jClient()
-        self.sepses_transformer = ElasticToSEPSesTransformer()
-        self.neo4j_transformer = SEPSesToNeo4jTransformer()
-        self.schema_initialized = False  # stop set again init databases 
+        #self.sepses_transformer = ElasticToSEPSesTransformer()
+        #self.neo4j_transformer = SEPSesToNeo4jTransformer()
+        self.schema_initialized = True  # stop set again init databases 
     
     async def __aenter__(self):
         return self
@@ -156,7 +154,7 @@ class AsyncDataManager:
                  hostname: h.hostname,
                  processName: p.name,
                  technique: t.techniqueName,
-                 tactic: t.tactic.id
+                 tactic: t.tactic
                }) AS events
         """
         result = await self.neo4j_client.execute_read(query)
