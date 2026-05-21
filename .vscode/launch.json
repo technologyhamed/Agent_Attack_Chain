@@ -29,6 +29,40 @@
         "console": "integratedTerminal",
         "purpose": ["debug-in-terminal"],
         "justMyCode": true
+    },
+      {
+      "name": "Train Model",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/graph-ml/HGTConv/main.py",
+      "args": ["--mode", "train"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}/graph-ml/HGTConv",
+      "justMyCode": true
+    },
+    {
+      "name": "Evaluate Model",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/main.py",
+      "args": ["--mode", "eval"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Inference",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/main.py",
+      "args": [
+        "--mode",
+        "infer",
+        "--input_seq",
+        "T1071.001,T1102,T1132.001"
+      ],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}"
     }
   ]
 }
+

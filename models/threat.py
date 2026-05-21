@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 #from models.event import SEPSesLogEvent
 
 @dataclass
@@ -52,7 +52,7 @@ class AttackChain:
             "lastTimestamp": self.last_timestamp.isoformat() if self.last_timestamp else None,
             "logEvents": [event.to_dict() for event in self.log_events],
             "uniqueTtps": [ttp.to_dict() for ttp in self.unique_ttps],
-            "storedAt": datetime.utcnow().isoformat()
+            "storedAt": datetime.now(timezone.utc).isoformat()
         }
     
     def add_log_event(self, log_event: 'SEPSesLogEvent'):  # Use string annotation for forward reference

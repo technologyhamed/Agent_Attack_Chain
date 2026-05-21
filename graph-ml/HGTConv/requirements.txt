@@ -1,0 +1,14 @@
+torch>=2.2
+torch-geometric>=2.5
+torch-scatter
+torch-sparse
+torch-cluster
+torch-spline-conv
+dgl>=2.1
+numpy
+pandas
+scikit-learn
+matplotlib
+seaborn
+networkx
+tqdm
