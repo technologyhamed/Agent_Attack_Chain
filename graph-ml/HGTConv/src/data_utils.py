@@ -286,3 +286,119 @@ def get_unique_tactics_from_techniques(technique_ids: List[str],
     unique_tactics.sort(key=lambda x: tactic_order.get(x, 999))
     
     return unique_tactics
+
+
+import numpy as np
+from typing import List, Dict, Union
+
+def convert_indices_to_techniques(y_indices: Union[np.ndarray, List[int]], 
+                                  id2technique: Dict[int, str]) -> List[str]:
+    """
+    تبدیل آرایه ایندکس‌های عددی به لیست external_id تکنیک‌ها
+    
+    Args:
+        y_indices: آرایه numpy یا لیست شامل ایندکس‌های عددی تکنیک‌ها
+        id2technique: دیکشنری نگاشت از ایندکس به external_id تکنیک
+    
+    Returns:
+        techniques: لیست external_id تکنیک‌ها (مثل ['T1003.001', 'T1078', ...])
+    
+    Example:
+        >>> y_true = np.array([5, 270, 65, 5, 185])
+        >>> id2technique = {5: 'T1003.001', 270: 'T1078', 65: 'T1041', 185: 'T1566'}
+        >>> techniques = convert_indices_to_techniques(y_true, id2technique)
+        >>> print(techniques)
+        ['T1003.001', 'T1078', 'T1041', 'T1003.001', 'T1566']
+    """
+    # تبدیل numpy array به لیست در صورت نیاز
+    if isinstance(y_indices, np.ndarray):
+        y_indices = y_indices.tolist()
+    
+    # نگاشت ایندکس‌ها به تکنیک‌ها
+    techniques = []
+    for idx in y_indices:
+        if idx in id2technique:
+            techniques.append(id2technique[idx])
+        else:
+            print(f"Warning: Index {idx} not found in id2technique mapping")
+            techniques.append(f"UNKNOWN_{idx}")
+    
+    return techniques
+
+
+def convert_indices_to_techniques_batch(y_true: Union[np.ndarray, List[int]],
+                                        y_pred: Union[np.ndarray, List[int]],
+                                        id2technique: Dict[int, str]) -> tuple:
+    """
+    تبدیل همزمان y_true و y_pred به لیست تکنیک‌ها
+    
+    Args:
+        y_true: آرایه ایندکس‌های واقعی
+        y_pred: آرایه ایندکس‌های پیش‌بینی شده
+        id2technique: دیکشنری نگاشت
+    
+    Returns:
+        (y_true_techniques, y_pred_techniques): تاپل دو لیست تکنیک
+    
+    Example:
+        >>> y_true = np.array([5, 270, 65])
+        >>> y_pred = np.array([5, 270, 190])
+        >>> y_true_tech, y_pred_tech = convert_indices_to_techniques_batch(
+        ...     y_true, y_pred, id2technique
+        ... )
+    """
+    y_true_techniques = convert_indices_to_techniques(y_true, id2technique)
+    y_pred_techniques = convert_indices_to_techniques(y_pred, id2technique)
+    
+    return y_true_techniques, y_pred_techniques
+
+
+def get_unique_techniques_from_indices(y_indices: Union[np.ndarray, List[int]],
+                                      id2technique: Dict[int, str],
+                                      preserve_order: bool = True) -> List[str]:
+    """
+    استخراج لیست یکتای تکنیک‌ها از آرایه ایندکس‌ها
+    
+    Args:
+        y_indices: آرایه ایندکس‌های عددی
+        id2technique: دیکشنری نگاشت
+        preserve_order: حفظ ترتیب ظهور اولین بار (True) یا مرتب‌سازی (False)
+    
+    Returns:
+        unique_techniques: لیست یکتای تکنیک‌ها
+    
+    Example:
+        >>> y_true = np.array([5, 270, 65, 5, 185, 270])
+        >>> unique = get_unique_techniques_from_indices(y_true, id2technique)
+        >>> print(unique)
+        ['T1003.001', 'T1078', 'T1041', 'T1566']
+    """
+    techniques = convert_indices_to_techniques(y_indices, id2technique)
+    
+    if preserve_order:
+        # حفظ ترتیب ظهور
+        unique_techniques = list(dict.fromkeys(techniques))
+    else:
+        # مرتب‌سازی الفبایی
+        unique_techniques = sorted(set(techniques))
+    
+    return unique_techniques
+
+
+def create_technique_to_index_mapping(id2technique: Dict[int, str]) -> Dict[str, int]:
+    """
+    ساخت نگاشت معکوس: external_id -> index
+    
+    Args:
+        id2technique: دیکشنری نگاشت از ایندکس به تکنیک
+    
+    Returns:
+        technique2id: دیکشنری نگاشت از تکنیک به ایندکس
+    
+    Example:
+        >>> id2technique = {5: 'T1003.001', 270: 'T1078'}
+        >>> technique2id = create_technique_to_index_mapping(id2technique)
+        >>> print(technique2id)
+        {'T1003.001': 5, 'T1078': 270}
+    """
+    return {tech: idx for idx, tech in id2technique.items()}

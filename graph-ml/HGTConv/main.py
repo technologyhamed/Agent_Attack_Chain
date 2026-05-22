@@ -3,6 +3,9 @@ from pathlib import Path
 import torch
 from src.config import Config
 from src.data_utils import (
+    convert_indices_to_techniques_batch,
+    get_unique_tactics_from_techniques,
+    map_techniques_to_tactics,
     set_seed,
     load_json_data,
     extract_sequences,
@@ -96,7 +99,7 @@ def main():
             ckpt = torch.load(config.CHECKPOINT_PATH, map_location=device)
             model.load_state_dict(ckpt["model_state_dict"])
             print("Checkpoint loaded.")
-        metrics = evaluate_model(model, dataset["test_samples"], device=device)
+        metrics = evaluate_model(model, dataset["test_samples"], dataset["id2technique"], device=device)
         print("\n" + "="*60)
         print("EVALUATION METRICS")
         print("="*60)
@@ -106,16 +109,76 @@ def main():
         print(f"F1-Score:  {metrics['f1']:.4f}")
         print(f"AUC:       {metrics['auc']:.4f}")
         print("="*60)
+        y_true_tech, y_pred_tech = convert_indices_to_techniques_batch(metrics['y_true'],metrics['y_pred'],dataset["id2technique"])
+        # تبدیل تکنیک‌ها به تاکتیک‌ها
+        y_true_tactics = map_techniques_to_tactics(
+            y_true_tech,
+            tactic_techniques_path="data/tactic_techniques.json"
+        )
 
-        class_names = None  # یا لیست نام کلاس‌ها
+        # ─────────────────────────────────────────────────────────
+        # تبدیل ایندکس‌ها به تکنیک‌ها
+        # ─────────────────────────────────────────────────────────
+        y_true_tech, y_pred_tech = convert_indices_to_techniques_batch(
+            metrics['y_true'],
+            metrics['y_pred'],
+            dataset["id2technique"]
+        )
     
-    # رسم Confusion Matrix
-        plot_confusion_matrix(metrics, class_names=class_names, 
-                         save_path="plots/confusion_matrix.png")
+        # ─────────────────────────────────────────────────────────
+        # تبدیل تکنیک‌ها به تاکتیک‌ها
+        # ─────────────────────────────────────────────────────────
+        y_true_tactics = map_techniques_to_tactics(
+            y_true_tech,
+            tactic_techniques_path="data/tactic_techniques.json"
+        )
     
-    # رسم ROC Curve
-        plot_roc_curve(metrics, class_names=class_names, 
-                  save_path="plots/roc_curve.png")
+        y_pred_tactics = map_techniques_to_tactics(
+            y_pred_tech,
+            tactic_techniques_path="data/tactic_techniques.json"
+        )
+        
+        # ─────────────────────────────────────────────────────────
+        # استخراج کلاس‌های یکتا (مرتب شده بر اساس tactic_order.json)
+        # ─────────────────────────────────────────────────────────
+        unique_tactics = get_unique_tactics_from_techniques(
+            y_true_tech + y_pred_tech,
+            tactic_techniques_path="data/tactic_techniques.json",
+            tactic_order_path="data/tactic_order.json"
+        )
+        
+        # ─────────────────────────────────────────────────────────
+        # ساخت نگاشت تکنیک به تاکتیک
+        # ─────────────────────────────────────────────────────────
+        import json
+        with open("data/tactic_techniques.json", "r") as f:
+            tactic_techniques = json.load(f)
+        
+        technique_to_tactic_map = {}
+        for tactic, techniques in tactic_techniques.items():
+            for tech in techniques:
+                technique_to_tactic_map[tech['external_id']] = tactic
+    
+        # ─────────────────────────────────────────────────────────
+        # رسم نمودارها
+        # ─────────────────────────────────────────────────────────
+        
+        # روش 1: رسم جداگانه
+        plot_confusion_matrix(
+            y_true_tactics, 
+            y_pred_tactics,
+            class_names=unique_tactics,
+            save_path="plots/tactic_confusion_matrix.png"
+        )
+        
+        plot_roc_curve(
+            y_true_tactics,
+            metrics['y_prob'],
+            technique_to_tactic_map,
+            dataset["id2technique"],
+            class_names=unique_tactics,
+            save_path="plots/tactic_roc_curve.png"
+        )
 
     elif args.mode == "infer":
         if config.CHECKPOINT_PATH.exists():

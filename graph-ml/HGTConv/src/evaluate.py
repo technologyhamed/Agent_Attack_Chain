@@ -14,7 +14,7 @@ from src.config import Config
 config = Config()
 
 
-def evaluate_model(model, test_samples, device=config.DEVICE):
+def evaluate_model(model, test_samples,id2technique, device=config.DEVICE):
     """
     ارزیابی مدل بر روی داده‌های تست
     
@@ -55,7 +55,7 @@ def evaluate_model(model, test_samples, device=config.DEVICE):
     precision = precision_score(y_true, y_pred, average="macro", zero_division=0)
     recall = recall_score(y_true, y_pred, average="macro", zero_division=0)
     f1 = f1_score(y_true, y_pred, average="macro", zero_division=0)
-
+     
     cm = confusion_matrix(y_true, y_pred)
 
     auc_score = None

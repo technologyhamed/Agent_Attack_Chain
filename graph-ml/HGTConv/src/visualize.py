@@ -4,7 +4,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from sklearn.calibration import label_binarize
-from sklearn.metrics import auc, roc_curve
+from sklearn.metrics import (
+    confusion_matrix, roc_curve, auc, 
+    accuracy_score, precision_score, recall_score, f1_score
+)
+from sklearn.preprocessing import label_binarize
+from itertools import cycle
+from typing import List, Dict, Optional, Union
 
 
 # IEEE Standard Font Configuration
@@ -83,23 +89,54 @@ def plot_training_loss(losses, save_path="plots/loss_curve.png"):
 
 
 
-def plot_confusion_matrix(metrics, class_names=None, save_path="confusion_matrix.png", figsize=(10, 8)):
+def plot_confusion_matrix(
+    y_true_tactics: List[str],
+    y_pred_tactics: List[str],
+    class_names: Optional[List[str]] = None,
+    save_path: str = "confusion_matrix.png",
+    figsize: tuple = (12, 10),
+    show_metrics: bool = True
+):
     """
-    رسم Confusion Matrix
+    رسم Confusion Matrix بر اساس تاکتیک‌ها
     
     Args:
-        metrics: دیکشنری خروجی از evaluate_model
-        class_names: لیست نام کلاس‌ها (اختیاری)
+        y_true_tactics: لیست تاکتیک‌های واقعی (مثل ['reconnaissance', 'initial-access', ...])
+        y_pred_tactics: لیست تاکتیک‌های پیش‌بینی شده
+        class_names: لیست نام کلاس‌ها برای نمایش (اختیاری، اگر None باشد از unique tactics استفاده می‌شود)
         save_path: مسیر ذخیره تصویر
         figsize: اندازه figure
+        show_metrics: نمایش معیارهای کلی در پایین نمودار
+    
+    Example:
+        >>> y_true_tactics = ['reconnaissance', 'initial-access', 'execution', ...]
+        >>> y_pred_tactics = ['reconnaissance', 'persistence', 'execution', ...]
+        >>> plot_confusion_matrix(y_true_tactics, y_pred_tactics, 
+        ...                       save_path="plots/tactic_cm.png")
     """
-    cm = metrics["confusion_matrix"]
-    
+    # استخراج کلاس‌های یکتا با حفظ ترتیب
     if class_names is None:
-        n_classes = cm.shape[0]
-        class_names = [f"Class {i}" for i in range(n_classes)]
+        # استخراج یکتاها از هر دو لیست
+        unique_tactics = list(dict.fromkeys(y_true_tactics + y_pred_tactics))
+        class_names = unique_tactics
     
+    # محاسبه confusion matrix
+    cm = confusion_matrix(y_true_tactics, y_pred_tactics, labels=class_names)
+    
+    # محاسبه معیارهای کلی
+    accuracy = accuracy_score(y_true_tactics, y_pred_tactics)
+    precision = precision_score(y_true_tactics, y_pred_tactics, 
+                                average='weighted', zero_division=0)
+    recall = recall_score(y_true_tactics, y_pred_tactics, 
+                         average='weighted', zero_division=0)
+    f1 = f1_score(y_true_tactics, y_pred_tactics, 
+                  average='weighted', zero_division=0)
+    
+    # ایجاد figure
     fig, ax = plt.subplots(figsize=figsize)
+    
+    # تبدیل نام‌های تاکتیک به فرمت قابل خواندن
+    readable_names = [name.replace('-', ' ').title() for name in class_names]
     
     # رسم heatmap
     sns.heatmap(
@@ -107,98 +144,170 @@ def plot_confusion_matrix(metrics, class_names=None, save_path="confusion_matrix
         annot=True,
         fmt='d',
         cmap='Blues',
-        xticklabels=class_names,
-        yticklabels=class_names,
+        xticklabels=readable_names,
+        yticklabels=readable_names,
         cbar_kws={'label': 'Count'},
         linewidths=0.5,
         linecolor='gray',
-        ax=ax
+        ax=ax,
+        square=True
     )
     
-    ax.set_xlabel('Predicted Label', fontsize=10, fontweight='bold')
-    ax.set_ylabel('True Label', fontsize=10, fontweight='bold')
-    ax.set_title('Confusion Matrix', fontsize=12, fontweight='bold', pad=15)
+    # تنظیمات محورها
+    ax.set_xlabel('Predicted Tactic', fontsize=11, fontweight='bold')
+    ax.set_ylabel('True Tactic', fontsize=11, fontweight='bold')
+    ax.set_title('Tactic-Level Confusion Matrix', 
+                 fontsize=13, fontweight='bold', pad=20)
     
     # چرخش برچسب‌ها
-    plt.setp(ax.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor')
-    plt.setp(ax.get_yticklabels(), rotation=0)
+    plt.setp(ax.get_xticklabels(), rotation=45, ha='right', 
+             rotation_mode='anchor', fontsize=9)
+    plt.setp(ax.get_yticklabels(), rotation=0, fontsize=9)
     
     # اضافه کردن آمار کلی
-    accuracy = metrics["accuracy"]
-    precision = metrics["precision"]
-    recall = metrics["recall"]
-    f1 = metrics["f1"]
-    
-    stats_text = f"Accuracy: {accuracy:.4f} | Precision: {precision:.4f} | Recall: {recall:.4f} | F1: {f1:.4f}"
-    fig.text(0.5, 0.02, stats_text, ha='center', fontsize=9, 
-             bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
+    if show_metrics:
+        stats_text = (
+            f"Accuracy: {accuracy:.4f}  |  "
+            f"Precision: {precision:.4f}  |  "
+            f"Recall: {recall:.4f}  |  "
+            f"F1-Score: {f1:.4f}"
+        )
+        fig.text(0.5, 0.02, stats_text, ha='center', fontsize=10, 
+                 bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.6))
     
     plt.tight_layout()
-    plt.savefig(save_path, dpi=600, bbox_inches='tight')
-    print(f"Confusion Matrix saved to: {save_path}")
-    plt.show()
+    plt.savefig(save_path, dpi=600, bbox_inches='tight', format='png')
+    print(f"✓ Confusion Matrix saved to: {save_path}")
+    print(f"  Accuracy: {accuracy:.4f} | Precision: {precision:.4f} | "
+          f"Recall: {recall:.4f} | F1: {f1:.4f}")
     plt.close()
 
 
-def plot_roc_curve(metrics, class_names=None, save_path="roc_curve.png", figsize=(10, 8)):
+def plot_roc_curve(
+    y_true_tactics: List[str],
+    y_prob: np.ndarray,
+    technique_to_tactic_map: Dict[str, str],
+    id2technique: Dict[int, str],
+    class_names: Optional[List[str]] = None,
+    save_path: str = "roc_curve.png",
+    figsize: tuple = (12, 10),
+    max_classes_to_plot: int = 14
+):
     """
-    رسم ROC Curve برای مسائل چند کلاسه
+    رسم ROC Curve برای تاکتیک‌ها (multi-class)
     
     Args:
-        metrics: دیکشنری خروجی از evaluate_model
-        class_names: لیست نام کلاس‌ها (اختیاری)
+        y_true_tactics: لیست تاکتیک‌های واقعی
+        y_prob: آرایه احتمالات پیش‌بینی شده (shape: [n_samples, n_technique_classes])
+        technique_to_tactic_map: دیکشنری نگاشت تکنیک به تاکتیک
+        id2technique: دیکشنری نگاشت ایندکس به external_id تکنیک
+        class_names: لیست نام تاکتیک‌ها برای نمایش (اختیاری)
         save_path: مسیر ذخیره تصویر
         figsize: اندازه figure
+        max_classes_to_plot: حداکثر تعداد کلاس‌ها برای رسم جداگانه
+    
+    Example:
+        >>> y_true_tactics = ['reconnaissance', 'initial-access', ...]
+        >>> y_prob = np.array([[0.1, 0.8, ...], [0.3, 0.5, ...], ...])  # احتمالات تکنیک‌ها
+        >>> technique_to_tactic_map = {'T1595': 'reconnaissance', 'T1078': 'initial-access', ...}
+        >>> plot_roc_curve(y_true_tactics, y_prob, technique_to_tactic_map, 
+        ...                id2technique, save_path="plots/tactic_roc.png")
     """
-    y_true = metrics["y_true"]
-    y_prob = metrics["y_prob"]
+    # ─────────────────────────────────────────────────────────
+    # گام 1: تبدیل احتمالات تکنیک‌ها به احتمالات تاکتیک‌ها
+    # ─────────────────────────────────────────────────────────
     
-    # تعداد کلاس‌ها
-    n_classes = y_prob.shape[1]
-    
+    # استخراج کلاس‌های یکتای تاکتیک
     if class_names is None:
-        class_names = [f"Class {i}" for i in range(n_classes)]
+        unique_tactics = sorted(list(set(y_true_tactics)))
+        class_names = unique_tactics
+    else:
+        unique_tactics = class_names
     
-    # تبدیل برچسب‌ها به فرمت binary
-    y_true_bin = label_binarize(y_true, classes=range(n_classes))
+    n_tactics = len(unique_tactics)
+    n_samples = y_prob.shape[0]
     
-    # محاسبه ROC curve و AUC برای هر کلاس
+    # ایجاد دیکشنری نگاشت تاکتیک به ایندکس
+    tactic_to_idx = {tactic: idx for idx, tactic in enumerate(unique_tactics)}
+    
+    # ایجاد آرایه احتمالات تاکتیک‌ها
+    y_prob_tactics = np.zeros((n_samples, n_tactics))
+    
+    # جمع احتمالات تکنیک‌های متعلق به هر تاکتیک
+    for tech_idx, tech_id in id2technique.items():
+        if tech_id in technique_to_tactic_map:
+            tactic = technique_to_tactic_map[tech_id]
+            if tactic in tactic_to_idx:
+                tactic_idx = tactic_to_idx[tactic]
+                y_prob_tactics[:, tactic_idx] += y_prob[:, tech_idx]
+    
+    # نرمال‌سازی احتمالات (اختیاری)
+    row_sums = y_prob_tactics.sum(axis=1, keepdims=True)
+    row_sums[row_sums == 0] = 1  # جلوگیری از تقسیم بر صفر
+    y_prob_tactics = y_prob_tactics / row_sums
+    
+    # ─────────────────────────────────────────────────────────
+    # گام 2: تبدیل برچسب‌های تاکتیک به فرمت binary
+    # ─────────────────────────────────────────────────────────
+    
+    # نگاشت تاکتیک‌های واقعی به ایندکس
+    y_true_indices = np.array([tactic_to_idx[t] for t in y_true_tactics])
+    
+    # تبدیل به binary format
+    y_true_bin = label_binarize(y_true_indices, classes=range(n_tactics))
+    
+    # ─────────────────────────────────────────────────────────
+    # گام 3: محاسبه ROC curve و AUC برای هر تاکتیک
+    # ─────────────────────────────────────────────────────────
+    
     fpr = dict()
     tpr = dict()
     roc_auc = dict()
     
-    for i in range(n_classes):
-        fpr[i], tpr[i], _ = roc_curve(y_true_bin[:, i], y_prob[:, i])
+    for i in range(n_tactics):
+        fpr[i], tpr[i], _ = roc_curve(y_true_bin[:, i], y_prob_tactics[:, i])
         roc_auc[i] = auc(fpr[i], tpr[i])
     
     # محاسبه micro-average ROC curve
-    fpr["micro"], tpr["micro"], _ = roc_curve(y_true_bin.ravel(), y_prob.ravel())
+    fpr["micro"], tpr["micro"], _ = roc_curve(
+        y_true_bin.ravel(), y_prob_tactics.ravel()
+    )
     roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
     
     # محاسبه macro-average ROC curve
-    all_fpr = np.unique(np.concatenate([fpr[i] for i in range(n_classes)]))
+    all_fpr = np.unique(np.concatenate([fpr[i] for i in range(n_tactics)]))
     mean_tpr = np.zeros_like(all_fpr)
-    for i in range(n_classes):
+    for i in range(n_tactics):
         mean_tpr += np.interp(all_fpr, fpr[i], tpr[i])
-    mean_tpr /= n_classes
+    mean_tpr /= n_tactics
     
     fpr["macro"] = all_fpr
     tpr["macro"] = mean_tpr
     roc_auc["macro"] = auc(fpr["macro"], tpr["macro"])
     
-    # رسم نمودار
+    # ─────────────────────────────────────────────────────────
+    # گام 4: رسم نمودار
+    # ─────────────────────────────────────────────────────────
+    
     fig, ax = plt.subplots(figsize=figsize)
     
-    # رنگ‌های مختلف برای هر کلاس
-    colors = cycle(['aqua', 'darkorange', 'cornflowerblue', 'green', 'red', 
-                    'purple', 'brown', 'pink', 'gray', 'olive'])
+    # رنگ‌های مختلف
+    colors = cycle([
+        'aqua', 'darkorange', 'cornflowerblue', 'green', 'red', 
+        'purple', 'brown', 'pink', 'gray', 'olive', 'cyan', 
+        'magenta', 'yellow', 'black'
+    ])
     
-    # رسم ROC برای هر کلاس
-    for i, color in zip(range(n_classes), colors):
-        ax.plot(
-            fpr[i], tpr[i], color=color, lw=2,
-            label=f'{class_names[i]} (AUC = {roc_auc[i]:.3f})'
-        )
+    # تبدیل نام‌های تاکتیک به فرمت قابل خواندن
+    readable_names = [name.replace('-', ' ').title() for name in unique_tactics]
+    
+    # رسم ROC برای هر تاکتیک (محدود به max_classes_to_plot)
+    if n_tactics <= max_classes_to_plot:
+        for i, color in zip(range(n_tactics), colors):
+            ax.plot(
+                fpr[i], tpr[i], color=color, lw=2,
+                label=f'{readable_names[i]} (AUC = {roc_auc[i]:.3f})'
+            )
     
     # رسم micro-average
     ax.plot(
@@ -217,39 +326,78 @@ def plot_roc_curve(metrics, class_names=None, save_path="roc_curve.png", figsize
     # خط مرجع (random classifier)
     ax.plot([0, 1], [0, 1], 'k--', lw=2, label='Random Classifier (AUC = 0.5)')
     
+    # تنظیمات محورها
     ax.set_xlim([0.0, 1.0])
     ax.set_ylim([0.0, 1.05])
-    ax.set_xlabel('False Positive Rate', fontsize=10, fontweight='bold')
-    ax.set_ylabel('True Positive Rate', fontsize=10, fontweight='bold')
-    ax.set_title('Receiver Operating Characteristic (ROC) Curve', 
-                 fontsize=12, fontweight='bold', pad=15)
-    ax.legend(loc="lower right", fontsize=8, framealpha=0.9)
+    ax.set_xlabel('False Positive Rate', fontsize=11, fontweight='bold')
+    ax.set_ylabel('True Positive Rate', fontsize=11, fontweight='bold')
+    ax.set_title('Tactic-Level ROC Curve (Multi-Class)', 
+                 fontsize=13, fontweight='bold', pad=20)
+    
+    # Legend
+    if n_tactics <= max_classes_to_plot:
+        ax.legend(loc="lower right", fontsize=8, framealpha=0.95, ncol=1)
+    else:
+        ax.legend(loc="lower right", fontsize=9, framealpha=0.95)
+    
     ax.grid(alpha=0.3, linestyle='--', linewidth=0.8)
     
     plt.tight_layout()
-    plt.savefig(save_path, dpi=600, bbox_inches='tight')
-    print(f"ROC Curve saved to: {save_path}")
-    plt.show()
+    plt.savefig(save_path, dpi=600, bbox_inches='tight', format='png')
+    print(f"✓ ROC Curve saved to: {save_path}")
+    print(f"  Micro-average AUC: {roc_auc['micro']:.4f}")
+    print(f"  Macro-average AUC: {roc_auc['macro']:.4f}")
     plt.close()
 
 
-def plot_all_metrics(metrics, class_names=None, save_dir="./plots"):
-    
+def plot_all_metrics(
+    y_true_tactics: List[str],
+    y_pred_tactics: List[str],
+    y_prob: np.ndarray,
+    technique_to_tactic_map: Dict[str, str],
+    id2technique: Dict[int, str],
+    class_names: Optional[List[str]] = None,
+    save_dir: str = "plots"
+):
     """
-    رسم تمام نمودارها (Confusion Matrix و ROC Curve)
+    رسم همه نمودارها (Confusion Matrix + ROC Curve)
     
     Args:
-        metrics: دیکشنری خروجی از evaluate_model
-        class_names: لیست نام کلاس‌ها (اختیاری)
-        save_dir: مسیر پوشه ذخیره تصاویر
+        y_true_tactics: لیست تاکتیک‌های واقعی
+        y_pred_tactics: لیست تاکتیک‌های پیش‌بینی شده
+        y_prob: آرایه احتمالات
+        technique_to_tactic_map: نگاشت تکنیک به تاکتیک
+        id2technique: نگاشت ایندکس به تکنیک
+        class_names: نام کلاس‌ها (اختیاری)
+        save_dir: مسیر پوشه ذخیره
     """
     import os
     os.makedirs(save_dir, exist_ok=True)
     
-    cm_path = os.path.join(save_dir, "confusion_matrix.png")
-    roc_path = os.path.join(save_dir, "roc_curve.png")
+    print("\n" + "="*60)
+    print("GENERATING EVALUATION PLOTS")
+    print("="*60)
     
-    plot_confusion_matrix(metrics, class_names=class_names, save_path=cm_path)
-    plot_roc_curve(metrics, class_names=class_names, save_path=roc_path)
+    # Confusion Matrix
+    cm_path = os.path.join(save_dir, "tactic_confusion_matrix.png")
+    plot_confusion_matrix(
+        y_true_tactics, y_pred_tactics,
+        class_names=class_names,
+        save_path=cm_path
+    )
     
-    print(f"\nAll plots saved to: {save_dir}")
+    # ROC Curve
+    roc_path = os.path.join(save_dir, "tactic_roc_curve.png")
+    plot_roc_curve(
+        y_true_tactics, y_prob,
+        technique_to_tactic_map, id2technique,
+        class_names=class_names,
+        save_path=roc_path
+    )
+    
+    print("="*60)
+    print("ALL PLOTS GENERATED SUCCESSFULLY")
+    print("="*60 + "\n")
+
+
+   
