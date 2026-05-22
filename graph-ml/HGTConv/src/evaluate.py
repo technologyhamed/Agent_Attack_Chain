@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-from src.config import Config
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -10,9 +9,23 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 
+from src.config import Config
+
 config = Config()
 
+
 def evaluate_model(model, test_samples, device=config.DEVICE):
+    """
+    ارزیابی مدل بر روی داده‌های تست
+    
+    Args:
+        model: مدل آموزش دیده
+        test_samples: نمونه‌های تست
+        device: دستگاه محاسباتی (CPU/GPU)
+    
+    Returns:
+        metrics: دیکشنری شامل معیارهای ارزیابی
+    """
     model.to(device)
     model.eval()
 
@@ -45,19 +58,22 @@ def evaluate_model(model, test_samples, device=config.DEVICE):
 
     cm = confusion_matrix(y_true, y_pred)
 
-    auc = None
+    auc_score = None
     try:
-        auc = roc_auc_score(y_true, y_prob, multi_class="ovr", average="macro")
+        auc_score = roc_auc_score(y_true, y_prob, multi_class="ovr", average="macro")
     except Exception:
-        auc = float("nan")
+        auc_score = float("nan")
 
     metrics = {
         "accuracy": acc,
         "precision": precision,
         "recall": recall,
         "f1": f1,
-        "auc": auc,
+        "auc": auc_score,
         "confusion_matrix": cm,
+        "y_true": y_true,
+        "y_pred": y_pred,
+        "y_prob": y_prob,
     }
     return metrics
 

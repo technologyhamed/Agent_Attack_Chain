@@ -160,3 +160,129 @@ def split_chain_seq(chain_seq: List[dict], test_ratio=0.2, val_ratio=0.1, seed=4
     train_chain_seq = chain_seq[n_test + n_val:]
 
     return train_chain_seq, val_chain_seq, test_chain_seq
+
+
+import json
+from typing import List, Dict
+
+def map_techniques_to_tactics(technique_ids: List[str], 
+                              tactic_techniques_path: str = "tactic_techniques.json",
+                              tactic_order_path: str = "tactic_order.json") -> List[str]:
+    """
+    نگاشت لیست تکنیک‌ها به نام تاکتیک‌های مربوطه
+    
+    Args:
+        technique_ids: لیست external_id تکنیک‌ها (مثل ['T1583', 'T1078', ...])
+        tactic_techniques_path: مسیر فایل JSON نگاشت تاکتیک به تکنیک
+        tactic_order_path: مسیر فایل JSON ترتیب تاکتیک‌ها
+    
+    Returns:
+        class_names: لیست نام تاکتیک‌ها به ترتیب تکنیک‌های ورودی
+    
+    Example:
+        >>> techniques = ['T1583', 'T1078', 'T1566']
+        >>> class_names = map_techniques_to_tactics(techniques)
+        >>> print(class_names)
+        ['resource-development', 'initial-access', 'initial-access']
+    """
+    # بارگذاری فایل‌ها
+    with open(tactic_techniques_path, 'r', encoding='utf-8') as f:
+        tactic_techniques = json.load(f)
+    
+    # ساخت دیکشنری نگاشت: external_id -> tactic_name
+    technique_to_tactic = {}
+    for tactic_name, techniques in tactic_techniques.items():
+        for tech in techniques:
+            technique_to_tactic[tech['external_id']] = tactic_name
+    
+    # نگاشت تکنیک‌های ورودی به تاکتیک‌ها
+    class_names = []
+    for tech_id in technique_ids:
+        if tech_id in technique_to_tactic:
+            class_names.append(technique_to_tactic[tech_id])
+        else:
+            # اگر تکنیک پیدا نشد، از خود تکنیک استفاده کن
+            print(f"Warning: Technique '{tech_id}' not found in tactic_techniques.json")
+            class_names.append(tech_id)
+    
+    return class_names
+
+
+def map_techniques_to_tactics_with_labels(technique_ids: List[str],
+                                          tactic_techniques_path: str = "tactic_techniques.json",
+                                          format_type: str = "name") -> List[str]:
+    """
+    نگاشت تکنیک‌ها به برچسب‌های قابل خواندن (نام کامل یا نام فارسی)
+    
+    Args:
+        technique_ids: لیست external_id تکنیک‌ها
+        tactic_techniques_path: مسیر فایل JSON
+        format_type: نوع فرمت خروجی
+            - "name": نام انگلیسی تاکتیک (مثل 'resource-development')
+            - "readable": نام قابل خواندن (مثل 'Resource Development')
+            - "persian": نام فارسی (نیاز به دیکشنری ترجمه)
+    
+    Returns:
+        class_names: لیست برچسب‌های فرمت شده
+    """
+    # دیکشنری ترجمه (اختیاری)
+    tactic_translations = {
+        'resource-development': 'توسعه منابع',
+        'initial-access': 'دسترسی اولیه',
+        'execution': 'اجرا',
+        'persistence': 'پایداری',
+        'privilege-escalation': 'افزایش سطح دسترسی',
+        'defense-evasion': 'فرار از دفاع',
+        'credential-access': 'دسترسی به اعتبارنامه',
+        'discovery': 'کشف',
+        'lateral-movement': 'حرکت جانبی',
+        'collection': 'جمع‌آوری',
+        'command-and-control': 'فرمان و کنترل',
+        'exfiltration': 'استخراج داده',
+        'impact': 'تأثیر'
+    }
+    
+    # نگاشت اولیه
+    tactic_names = map_techniques_to_tactics(technique_ids, tactic_techniques_path)
+    
+    # فرمت‌بندی بر اساس نوع
+    if format_type == "readable":
+        return [name.replace('-', ' ').title() for name in tactic_names]
+    elif format_type == "persian":
+        return [tactic_translations.get(name, name) for name in tactic_names]
+    else:  # "name"
+        return tactic_names
+
+
+def get_unique_tactics_from_techniques(technique_ids: List[str],
+                                      tactic_techniques_path: str = "tactic_techniques.json",
+                                      tactic_order_path: str = "tactic_order.json") -> List[str]:
+    """
+    استخراج لیست یکتای تاکتیک‌ها از تکنیک‌های ورودی (به ترتیب tactic_order)
+    
+    Args:
+        technique_ids: لیست external_id تکنیک‌ها
+        tactic_techniques_path: مسیر فایل JSON نگاشت
+        tactic_order_path: مسیر فایل JSON ترتیب
+    
+    Returns:
+        unique_tactics: لیست یکتای تاکتیک‌ها به ترتیب
+    
+    Example:
+        >>> techniques = ['T1583', 'T1078', 'T1566', 'T1584']
+        >>> unique_tactics = get_unique_tactics_from_techniques(techniques)
+        >>> print(unique_tactics)
+        ['resource-development', 'initial-access']
+    """
+    # بارگذاری ترتیب تاکتیک‌ها
+    with open(tactic_order_path, 'r', encoding='utf-8') as f:
+        tactic_order = json.load(f)
+    
+    # نگاشت تکنیک‌ها به تاکتیک‌ها
+    tactic_names = map_techniques_to_tactics(technique_ids, tactic_techniques_path)
+    
+    # استخراج یکتاها و مرتب‌سازی
+    unique_tactics = list(dict.fromkeys(tactic_names))  # حفظ ترتیب
+    unique_tactics.sort(key=lambda x: tactic_order.get(x, 999))
+    
+    return unique_tactics

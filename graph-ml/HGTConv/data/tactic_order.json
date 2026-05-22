@@ -1,0 +1,16 @@
+{
+  "reconnaissance": 0,
+  "resource-development": 1,
+  "initial-access": 2,
+  "execution": 3,
+  "persistence": 4,
+  "privilege-escalation": 5,
+  "defense-evasion": 6,
+  "credential-access": 7,
+  "discovery": 8,
+  "lateral-movement": 9,
+  "collection": 10,
+  "command-and-control": 11,
+  "exfiltration": 12,
+  "impact": 13
+}

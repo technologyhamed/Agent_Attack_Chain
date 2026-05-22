@@ -1,8 +1,6 @@
 import argparse
 from pathlib import Path
-
 import torch
-
 from src.config import Config
 from src.data_utils import (
     set_seed,
@@ -17,7 +15,7 @@ from src.model_EA_HGT import EAHGT
 from src.train import train_model
 from src.evaluate import evaluate_model
 from src.inference import predict_next_techniques
-from src.visualize import plot_topk_predictions, plot_training_loss
+from src.visualize import plot_confusion_matrix, plot_roc_curve, plot_topk_predictions, plot_training_loss
 
 
 def build_graph(sample, technique2id):
@@ -99,7 +97,25 @@ def main():
             model.load_state_dict(ckpt["model_state_dict"])
             print("Checkpoint loaded.")
         metrics = evaluate_model(model, dataset["test_samples"], device=device)
-        print(metrics)
+        print("\n" + "="*60)
+        print("EVALUATION METRICS")
+        print("="*60)
+        print(f"Accuracy:  {metrics['accuracy']:.4f}")
+        print(f"Precision: {metrics['precision']:.4f}")
+        print(f"Recall:    {metrics['recall']:.4f}")
+        print(f"F1-Score:  {metrics['f1']:.4f}")
+        print(f"AUC:       {metrics['auc']:.4f}")
+        print("="*60)
+
+        class_names = None  # یا لیست نام کلاس‌ها
+    
+    # رسم Confusion Matrix
+        plot_confusion_matrix(metrics, class_names=class_names, 
+                         save_path="plots/confusion_matrix.png")
+    
+    # رسم ROC Curve
+        plot_roc_curve(metrics, class_names=class_names, 
+                  save_path="plots/roc_curve.png")
 
     elif args.mode == "infer":
         if config.CHECKPOINT_PATH.exists():
