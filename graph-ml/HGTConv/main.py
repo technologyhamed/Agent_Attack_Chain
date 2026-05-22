@@ -9,15 +9,15 @@ from src.data_utils import (
     load_json_data,
     extract_sequences,
     build_vocab,
-    build_sequence_samples,
+    build_sequence_chain_seq,
     sequence_to_heterodata,
-    split_samples,
+    split_chain_seq,
 )
 from src.model_EA_HGT import EAHGT
 from src.train import train_model
 from src.evaluate import evaluate_model
 from src.inference import predict_next_techniques
-from src.visualize import plot_topk_predictions
+from src.visualize import plot_topk_predictions, plot_training_loss
 
 
 def build_graph(sample, technique2id):
@@ -30,10 +30,10 @@ def prepare_dataset(config: Config):
     raw_data = load_json_data(config.DATA_PATH)
     records = extract_sequences(raw_data)
     technique2id, id2technique, tactic2id, id2tactic = build_vocab(records)
-    samples = build_sequence_samples(records, technique2id, config.MAX_SEQ_LEN)
+    samples = build_sequence_chain_seq(records, technique2id, config.MAX_SEQ_LEN)
 
     samples = [build_graph(sample, technique2id) for sample in samples]
-    train_samples, val_samples, test_samples = split_samples(
+    train_samples, val_samples, test_samples = split_chain_seq(
         samples,
         test_ratio=config.TEST_RATIO,
         val_ratio=config.VAL_RATIO,
@@ -81,16 +81,17 @@ def main():
     )
 
     if args.mode == "train":
-        train_model(model, dataset["train_samples"], dataset["technique2id"], config, device=device)
-        torch.save(
-            {
-                "model_state_dict": model.state_dict(),
-                "technique2id": dataset["technique2id"],
-                "id2technique": dataset["id2technique"],
-            },
-            config.CHECKPOINT_PATH,
-        )
+        losses = train_model(model, dataset["train_samples"], dataset["technique2id"], config, device=device)
+        # torch.save(
+        #     {
+        #         "model_state_dict": model.state_dict(),
+        #         "technique2id": dataset["technique2id"],
+        #         "id2technique": dataset["id2technique"],
+        #     },
+        #     config.CHECKPOINT_PATH,
+        # )
         print(f"Model saved to {config.CHECKPOINT_PATH}")
+        plot_training_loss(losses, save_path="plots/loss_curve.png")
 
     elif args.mode == "eval":
         if config.CHECKPOINT_PATH.exists():

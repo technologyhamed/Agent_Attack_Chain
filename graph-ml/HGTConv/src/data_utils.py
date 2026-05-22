@@ -4,10 +4,12 @@ from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Tuple, Any
-
+from venv import logger
+from src.config import Config
 import torch
 from torch_geometric.data import HeteroData
 
+config=Config()
 
 @dataclass
 class DatasetArtifacts:
@@ -15,7 +17,7 @@ class DatasetArtifacts:
     id2technique: Dict[int, str]
     tactic2id: Dict[str, int]
     id2tactic: Dict[int, str]
-    samples: List[dict]
+    chain_seq: List[dict]
 
 
 def set_seed(seed: int = 42):
@@ -61,7 +63,7 @@ def extract_sequences(raw_data: dict) -> List[dict]:
 def build_vocab(records: List[dict]) -> Tuple[Dict[str, int], Dict[int, str], Dict[str, int], Dict[int, str]]:
     technique_counter = Counter()
     tactic_counter = Counter()
-
+    logger.info(f"${technique_counter},${tactic_counter}")
     for rec in records:
         for item in rec["sequence"]:
             tech = item.get("technique_id")
@@ -83,12 +85,12 @@ def build_vocab(records: List[dict]) -> Tuple[Dict[str, int], Dict[int, str], Di
     return technique2id, id2technique, tactic2id, id2tactic
 
 
-def build_sequence_samples(records: List[dict], technique2id: Dict[str, int], max_seq_len: int = 20) -> List[dict]:
+def build_sequence_chain_seq(records: List[dict], technique2id: Dict[str, int], max_seq_len: int = config.MAX_SEQ_LEN) -> List[dict]:
     """
-    هر sequence را به چند نمونه supervised تبدیل می‌کند:
+    Each sequence is converted into several supervised examples.
     [t1, t2, t3] -> input=[t1, t2], target=t3
     """
-    samples = []
+    chain_seq = []
 
     for rec in records:
         seq = [
@@ -103,7 +105,7 @@ def build_sequence_samples(records: List[dict], technique2id: Dict[str, int], ma
         for i in range(1, len(seq)):
             input_seq = seq[max(0, i - max_seq_len):i]
             target = seq[i]
-            samples.append(
+            chain_seq.append(
                 {
                     "group": rec["group"],
                     "input_seq": input_seq,
@@ -112,7 +114,7 @@ def build_sequence_samples(records: List[dict], technique2id: Dict[str, int], ma
                 }
             )
 
-    return samples
+    return chain_seq
 
 
 def sequence_to_heterodata(
@@ -147,14 +149,14 @@ def sequence_to_heterodata(
     return data
 
 
-def split_samples(samples: List[dict], test_ratio=0.2, val_ratio=0.1, seed=42):
-    random.Random(seed).shuffle(samples)
-    n = len(samples)
+def split_chain_seq(chain_seq: List[dict], test_ratio=0.2, val_ratio=0.1, seed=42):
+    random.Random(seed).shuffle(chain_seq)
+    n = len(chain_seq)
     n_test = int(n * test_ratio)
     n_val = int(n * val_ratio)
 
-    test_samples = samples[:n_test]
-    val_samples = samples[n_test:n_test + n_val]
-    train_samples = samples[n_test + n_val:]
+    test_chain_seq = chain_seq[:n_test]
+    val_chain_seq = chain_seq[n_test:n_test + n_val]
+    train_chain_seq = chain_seq[n_test + n_val:]
 
-    return train_samples, val_samples, test_samples
+    return train_chain_seq, val_chain_seq, test_chain_seq

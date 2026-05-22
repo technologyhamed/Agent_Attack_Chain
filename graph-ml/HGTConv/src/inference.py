@@ -1,8 +1,9 @@
 import torch
-
+from src.config import Config
 #T1071.001, T1102, T1132.001
+config =Config()
 
-def predict_next_techniques(model, input_seq, technique2id, id2technique, data_builder, top_k=5, device="cpu"):
+def predict_next_techniques(model, input_seq, technique2id, id2technique, data_builder, top_k=config.TOP_K, device=config.DEVICE):
     """
     input_seq: list[str]
     out: top-k next technique softmax

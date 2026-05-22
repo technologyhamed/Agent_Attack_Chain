@@ -44,16 +44,18 @@
       "name": "Evaluate Model",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/main.py",
+      "program": "${workspaceFolder}/graph-ml/HGTConv/main.py",
       "args": ["--mode", "eval"],
       "console": "integratedTerminal",
-      "cwd": "${workspaceFolder}"
+      "cwd": "${workspaceFolder}/graph-ml/HGTConv",
+      "justMyCode": true
+
     },
     {
       "name": "Inference",
       "type": "debugpy",
       "request": "launch",
-      "program": "${workspaceFolder}/main.py",
+      "program":  "${workspaceFolder}/graph-ml/HGTConv/main.py",
       "args": [
         "--mode",
         "infer",
@@ -61,7 +63,8 @@
         "T1071.001,T1102,T1132.001"
       ],
       "console": "integratedTerminal",
-      "cwd": "${workspaceFolder}"
+      "cwd": "${workspaceFolder}/graph-ml/HGTConv",
+      "justMyCode": true
     }
   ]
 }

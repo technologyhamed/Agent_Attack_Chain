@@ -1,17 +1,22 @@
-import torch
+from dataclasses import dataclass
+
+from src.config import Config
 import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.nn import HGTConv, Linear
+
+
+config = Config()
 
 
 class EAHGT(nn.Module):
     def __init__(
         self,
         num_techniques: int,
-        hidden_dim: int = 128,
-        num_heads: int = 4,
-        num_layers: int = 2,
-        dropout: float = 0.2,
+        hidden_dim: int = config.HIDDEN_DIM,
+        num_heads: int = config.NUM_HEADS,
+        num_layers: int = config.NUM_LAYERS,
+        dropout: float = config.DROPOUT,
     ):
         super().__init__()
 
@@ -61,7 +66,7 @@ class EAHGT(nn.Module):
         x = x_dict["technique"]
         x = self.norm(x)
 
-        # استفاده از آخرین node به عنوان نماینده sequence
+        #Using the last node as the representative of the sequence
         seq_repr = x[-1]
         logits = self.classifier(seq_repr)
 

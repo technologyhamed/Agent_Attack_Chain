@@ -19,11 +19,14 @@ class Config:
     DROPOUT: float = 0.2
 
     BATCH_SIZE: int = 1
-    EPOCHS: int = 1
+    EPOCHS: int = 50
     LR: float = 1e-3
     WEIGHT_DECAY: float = 1e-5
 
     TOP_K: int = 5
     MAX_SEQ_LEN: int = 20
 
-    DEVICE: str = "cuda"  
+    #DEVICE: str = "cuda"  
+    DEVICE: str = "cpu"  
+    
+    NUM_TECHNIQUES: str = 20

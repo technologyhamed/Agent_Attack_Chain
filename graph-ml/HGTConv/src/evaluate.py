@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+from src.config import Config
 from sklearn.metrics import (
     accuracy_score,
     precision_score,
@@ -9,8 +10,9 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 
+config = Config()
 
-def evaluate_model(model, test_samples, device="cpu"):
+def evaluate_model(model, test_samples, device=config.DEVICE):
     model.to(device)
     model.eval()
 
@@ -58,3 +60,5 @@ def evaluate_model(model, test_samples, device="cpu"):
         "confusion_matrix": cm,
     }
     return metrics
+
+
